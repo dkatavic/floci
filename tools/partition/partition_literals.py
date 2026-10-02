@@ -112,12 +112,17 @@ CATEGORIES: tuple[Category, ...] = (
         re.compile(
             r'"aws"\s*\.\s*equals(?:IgnoreCase)?\s*\('
             r'|\.\s*equals(?:IgnoreCase)?\s*\(\s*"aws"\s*\)'
-            r'|Objects\.equals\(\s*"aws"\s*,|Objects\.equals\([^;]*?,\s*"aws"\s*\)'
+            # Objects.equals with "aws" as either argument; the other argument may hold one level of
+            # nested calls, and the match ends at this call's own closing parenthesis.
+            r'|Objects\.equals\(\s*"aws"\s*,'
+            r'|Objects\.equals\(\s*(?:[^(),;"]|"[^"]*"|\([^()]*\))*,\s*"aws"\s*\)'
+            # A switch label naming "aws", alone or in a list (case "aws" ->, case "x", "aws":).
+            r'|\bcase\s+(?:"[^"]*"\s*,\s*)*"aws"\s*(?:->|:|,)'
         ),
         True,
-        "a value compared with the literal \"aws\", which as a partition check holds only in the commercial "
-        "partition; compare with AwsRegions.partitionFor(region) or the stored ARN's own partition, or escape "
-        "a non-partition use (an account, a command name)",
+        "a value compared with, or switched on, the literal \"aws\", which as a partition check holds only "
+        "in the commercial partition; compare with AwsRegions.partitionFor(region) or the stored ARN's own "
+        "partition, or escape a non-partition use (an account, a command name)",
         "code",
     ),
 )
